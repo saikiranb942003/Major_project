@@ -8,6 +8,7 @@ app = Flask(__name__)
 heart_model = pickle.load(open('models/heart_disease_model.pkl', 'rb'))
 kidney_model = pickle.load(open('models/kidney.pkl', 'rb'))
 diabetes_model = pickle.load(open('models/Diabetes.pkl', 'rb'))
+scaler = pickle.load(open('models/scaler.pkl','rb'))
 
 @app.route('/')
 def home():
@@ -30,9 +31,13 @@ def diabetes():
 @app.route('/predict_heart', methods=['POST'])
 def predict_heart():
     try:
-        input_data = [float(request.form[key]) for key in request.form.keys()]
-        prediction = heart_model.predict([input_data])[0]
-        result = "Heart Disease Detected" if prediction == 1 else "No Heart Disease"
+        int_features = [float(x) for x in request.form.values()]
+        final_features = scaler.transform([int_features])  # Scale input features and convert to 2D array
+
+        # Make prediction
+        prediction = heart_model.predict(final_features)
+        heart_conditions = {0: "No", 1: "Yes"}
+        result = heart_conditions[int(prediction[0])]
         return render_template('heart/index.html', prediction_text=result)
     except Exception as e:
         return str(e)
